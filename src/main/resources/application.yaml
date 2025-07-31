@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: lightController
+server:
+  error:
+    include-message: always
