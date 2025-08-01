@@ -16,6 +16,6 @@ public class Device {
 	private String uuid;
 	@Column(unique = true, nullable = false)
 	private String macAddress;
-	@OneToMany
+	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Trigger> triggers = new ArrayList<>();
 }

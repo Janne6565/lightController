@@ -2,7 +2,6 @@ package com.janne.lightcontroller.controllers;
 
 import com.janne.lightcontroller.entities.Device;
 import com.janne.lightcontroller.entities.Trigger;
-import com.janne.lightcontroller.repositories.TriggerRepository;
 import com.janne.lightcontroller.services.DeviceService;
 import com.janne.lightcontroller.services.TriggerService;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +55,16 @@ public class TriggerController {
 	@DeleteMapping("/triggers/{trigger_uuid}")
 	public ResponseEntity<Void> deleteTrigger(@PathVariable("trigger_uuid") String trigger_uuid) {
 		triggerService.deleteTrigger(trigger_uuid);
+		return ResponseEntity.accepted().build();
+	}
+
+	@PostMapping("/triggers/execute/{trigger_uuid}")
+	public ResponseEntity<Void> executeTrigger(@PathVariable("trigger_uuid") String trigger_uuid) {
+		Trigger trigger = triggerService.getTrigger(trigger_uuid);
+		if (trigger.getLastTimeExecuted() + (long) (trigger.getDebounceTime() * 1000f) > System.currentTimeMillis()) {
+			throw new ResponseStatusException(HttpStatus.TOO_EARLY, "Trigger has ran into debounce");
+		}
+		triggerService.handleTriggerExecution(trigger_uuid);
 		return ResponseEntity.accepted().build();
 	}
 }
