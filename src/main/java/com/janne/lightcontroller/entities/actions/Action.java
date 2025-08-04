@@ -25,7 +25,7 @@ import lombok.Setter;
 public abstract class Action {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
-	private String id;
+	private String uuid;
 	@Column
 	private float duration = 1;
 

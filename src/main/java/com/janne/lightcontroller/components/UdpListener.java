@@ -33,7 +33,7 @@ public class UdpListener {
 		byte[] buffer = new byte[1024];
 
 		try (DatagramSocket socket = new DatagramSocket(port)) {
-			System.out.println("🔊 UDP Listener started on port " + port);
+			log.info("🔊 UDP Listener started on port {}", port);
 
 			while (true) {
 				DatagramPacket packet = new DatagramPacket(buffer, buffer.length);

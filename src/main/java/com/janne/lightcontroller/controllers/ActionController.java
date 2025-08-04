@@ -34,6 +34,7 @@ public class ActionController {
 		trigger.getActions().clear();
 		triggerService.saveTrigger(trigger);
 		actions.forEach(action -> {
+			action.setUuid(null);
 			actionService.saveAction(action);
 			trigger.getActions().add(action);
 		});

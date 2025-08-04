@@ -30,6 +30,6 @@ public class ArtNetFadeAction extends Action {
 
 	@Override
 	public void execute(DmxState dmxState, float progress) {
-		dmxDataTo.forEach((key, value) -> dmxState.setChannel(universe, key, (int) (dmxDataFrom.get(key) + (value - dmxDataFrom.get(key)) * progress)));
+		dmxDataTo.forEach((key, value) -> dmxState.setChannel(universe, key, (int) (dmxDataFrom.getOrDefault(key, 0) + (value - dmxDataFrom.getOrDefault(key, 0)) * progress)));
 	}
 }

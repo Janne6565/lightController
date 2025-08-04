@@ -58,16 +58,25 @@ public class DeviceService {
 		Device device = deviceRepository.findByMacAddress(mac);
 		if (device == null) {
 			log.warn("Received execute message for device with mac address {} which does not exist", mac);
+			saveDevice(Device.builder().macAddress(mac).build());
 			return;
 		}
 		List<Trigger> triggers = device.getTriggers();
 		if (triggers == null) {
 			log.warn("Received execute message for device with mac address {} which has no triggers setup", mac);
+			Trigger trigger = Trigger.builder().identifier(String.valueOf(pin)).build();
+			triggerService.saveTrigger(trigger);
+			device.getTriggers().add(trigger);
+			updateDevice(device);
 			return;
 		}
 		List<Trigger> filteredTriggers = triggers.stream().filter(trigger -> trigger.getIdentifier().equals(String.valueOf(pin))).toList();
 		if (filteredTriggers.isEmpty()) {
 			log.warn("Received execute message for device with mac address {} which has no triggers setup for pin {}", mac, pin);
+			Trigger trigger = Trigger.builder().identifier(String.valueOf(pin)).build();
+			triggerService.saveTrigger(trigger);
+			triggers.add(trigger);
+			updateDevice(device);
 			return;
 		}
 		triggerService.handleTriggerExecution(filteredTriggers.get(0).getUuid());
