@@ -32,6 +32,7 @@ public class ActionController {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Trigger with UUID" + trigger_uuid + " does not exist");
 		}
 		trigger.getActions().clear();
+		triggerService.saveTrigger(trigger);
 		actions.forEach(action -> {
 			actionService.saveAction(action);
 			trigger.getActions().add(action);

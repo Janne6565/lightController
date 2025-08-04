@@ -1,4 +1,4 @@
-package com.janne.lightcontroller.entities;
+package com.janne.lightcontroller.entities.internal;
 
 import lombok.Data;
 

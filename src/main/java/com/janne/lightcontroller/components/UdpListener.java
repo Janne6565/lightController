@@ -1,12 +1,10 @@
-package com.janne.lightcontroller;
+package com.janne.lightcontroller.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.janne.lightcontroller.entities.ESPMessage;
+import com.janne.lightcontroller.entities.internal.ESPMessage;
 import com.janne.lightcontroller.services.DeviceService;
-import com.janne.lightcontroller.services.TriggerService;
 import jakarta.annotation.PostConstruct;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,7 +18,6 @@ import java.net.DatagramSocket;
 @RequiredArgsConstructor
 public class UdpListener {
 
-	private final TriggerService triggerService;
 	private final DeviceService deviceService;
 	private final ObjectMapper objectMapper;
 

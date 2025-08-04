@@ -1,6 +1,8 @@
 package com.janne.lightcontroller.services;
 
 import ch.bildspur.artnet.ArtNetClient;
+import com.janne.lightcontroller.entities.internal.DmxState;
+import com.janne.lightcontroller.components.TriggerStateHolder;
 import com.janne.lightcontroller.entities.Device;
 import com.janne.lightcontroller.entities.Trigger;
 import com.janne.lightcontroller.repositories.DeviceRepository;
@@ -20,8 +22,8 @@ import java.util.List;
 public class TriggerService {
 
 	private final TriggerRepository triggerRepository;
-	private final ArtNetClient artnet;
 	private final DeviceRepository deviceRepository;
+	private final TriggerStateHolder triggerStateHolder;
 
 	public List<Trigger> getTriggers() {
 		return triggerRepository.findAll();
@@ -54,7 +56,7 @@ public class TriggerService {
 		}
 		trigger.setLastTimeExecuted(System.currentTimeMillis());
 		triggerRepository.save(trigger);
-		trigger.getActions().forEach(action -> action.execute(artnet));
+		triggerStateHolder.addActiveTrigger(trigger);
 	}
 
 }
