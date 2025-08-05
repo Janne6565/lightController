@@ -60,9 +60,8 @@ public class TriggerController {
 
 	@PostMapping("/triggers/execute/{trigger_uuid}")
 	public ResponseEntity<Void> executeTrigger(@PathVariable("trigger_uuid") String trigger_uuid) {
-		Trigger trigger = triggerService.getTrigger(trigger_uuid);
-		if (trigger.getLastTimeExecuted() + (long) (trigger.getDebounceTime() * 1000f) > System.currentTimeMillis()) {
-			throw new ResponseStatusException(HttpStatus.TOO_EARLY, "Trigger has ran into debounce");
+		if (triggerService.isTriggerRunning(trigger_uuid)) {
+			throw new ResponseStatusException(HttpStatus.BANDWIDTH_LIMIT_EXCEEDED, "Trigger is already running");
 		}
 		triggerService.handleTriggerExecution(trigger_uuid);
 		return ResponseEntity.accepted().build();

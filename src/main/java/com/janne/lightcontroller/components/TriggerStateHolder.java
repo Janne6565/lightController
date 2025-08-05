@@ -22,7 +22,4 @@ public class TriggerStateHolder {
 		activeTriggers.remove(triggerState);
 	}
 
-	public void clearActiveTriggers() {
-		activeTriggers.clear();
-	}
 }

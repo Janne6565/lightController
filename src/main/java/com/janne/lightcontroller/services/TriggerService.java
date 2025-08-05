@@ -1,7 +1,5 @@
 package com.janne.lightcontroller.services;
 
-import ch.bildspur.artnet.ArtNetClient;
-import com.janne.lightcontroller.entities.internal.DmxState;
 import com.janne.lightcontroller.components.TriggerStateHolder;
 import com.janne.lightcontroller.entities.Device;
 import com.janne.lightcontroller.entities.Trigger;
@@ -50,8 +48,8 @@ public class TriggerService {
 	@Async
 	public void handleTriggerExecution(String triggerUuid) {
 		Trigger trigger = triggerRepository.findById(triggerUuid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Trigger not found"));
-		if (trigger.getLastTimeExecuted() + (long) (trigger.getDebounceTime() * 1000f) > System.currentTimeMillis()) {
-			log.warn("Trigger [{}] has ran into debounce", triggerUuid);
+		if (isTriggerRunning(triggerUuid)) {
+			log.warn("Trigger [{}] was trying to be executed but was still running", triggerUuid);
 			return;
 		}
 		trigger.setLastTimeExecuted(System.currentTimeMillis());
@@ -59,4 +57,7 @@ public class TriggerService {
 		triggerStateHolder.addActiveTrigger(trigger);
 	}
 
+	public boolean isTriggerRunning(String triggerUuid) {
+		return triggerStateHolder.getActiveTriggers().stream().anyMatch(triggerState -> triggerState.getTrigger().getUuid().equals(triggerUuid));
+	}
 }

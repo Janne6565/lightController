@@ -33,7 +33,7 @@ public class ArtNetBroadcaster {
 	private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 	private Map<Integer, Map<Integer, Integer>> cachedBaseDmxData;
 
-	@Scheduled(fixedRate = 1, timeUnit = TimeUnit.SECONDS)
+	@Scheduled(fixedRate = 500, timeUnit = TimeUnit.MILLISECONDS)
 	public void refreshCachedDmxData() {
 		Map<Integer, Map<Integer, Integer>> newCache = new HashMap<>();
 

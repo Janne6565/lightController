@@ -21,8 +21,6 @@ public class Trigger {
 	private String identifier;
 	@Column
 	private long lastTimeExecuted;
-	@Column(nullable = false)
-	private Float debounceTime = 0.5f;
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	private List<Action> actions = new ArrayList<>();
 }

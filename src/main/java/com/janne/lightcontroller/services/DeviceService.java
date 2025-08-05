@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -55,30 +56,22 @@ public class DeviceService {
 	}
 
 	public void handleExecute(String mac, int pin) {
-		Device device = deviceRepository.findByMacAddress(mac);
-		if (device == null) {
-			log.warn("Received execute message for device with mac address {} which does not exist", mac);
-			saveDevice(Device.builder().macAddress(mac).build());
-			return;
-		}
+		Trigger trigger = createTriggerIfNotExisting(mac, pin);
+		triggerService.handleTriggerExecution(trigger.getUuid());
+	}
+
+	private Trigger createTriggerIfNotExisting(String mac, int pin) {
+		Device device = Optional.ofNullable(deviceRepository.findByMacAddress(mac)).orElse(Device.builder().macAddress(mac).build());
 		List<Trigger> triggers = device.getTriggers();
 		if (triggers == null) {
-			log.warn("Received execute message for device with mac address {} which has no triggers setup", mac);
-			Trigger trigger = Trigger.builder().identifier(String.valueOf(pin)).build();
-			triggerService.saveTrigger(trigger);
-			device.getTriggers().add(trigger);
-			updateDevice(device);
-			return;
+			triggers = List.of(Trigger.builder().identifier(String.valueOf(pin)).lastTimeExecuted(System.currentTimeMillis()).build());
+			device.setTriggers(triggers);
+		} else {
+			Optional<Trigger> trigger = triggers.stream().filter(t -> t.getIdentifier().equals(String.valueOf(pin))).findFirst();
+			if (trigger.isEmpty()) {
+				triggers.add(Trigger.builder().identifier(String.valueOf(pin)).lastTimeExecuted(System.currentTimeMillis()).build());
+			}
 		}
-		List<Trigger> filteredTriggers = triggers.stream().filter(trigger -> trigger.getIdentifier().equals(String.valueOf(pin))).toList();
-		if (filteredTriggers.isEmpty()) {
-			log.warn("Received execute message for device with mac address {} which has no triggers setup for pin {}", mac, pin);
-			Trigger trigger = Trigger.builder().identifier(String.valueOf(pin)).build();
-			triggerService.saveTrigger(trigger);
-			triggers.add(trigger);
-			updateDevice(device);
-			return;
-		}
-		triggerService.handleTriggerExecution(filteredTriggers.get(0).getUuid());
+		return deviceRepository.save(device).getTriggers().get(0);
 	}
 }
