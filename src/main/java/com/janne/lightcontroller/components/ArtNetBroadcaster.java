@@ -27,74 +27,70 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 public class ArtNetBroadcaster {
-	private final ArtNetClient artNetClient;
-	private final TriggerStateHolder triggerStateHolder;
-	private final DmxBaseService dmxBaseService;
-	private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-	private Map<Integer, Map<Integer, Integer>> cachedBaseDmxData;
+    private final ArtNetClient artNetClient;
+    private final TriggerStateHolder triggerStateHolder;
+    private final DmxBaseService dmxBaseService;
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private final InetAddress broadcastIp;
+    private Map<Integer, Map<Integer, Integer>> cachedBaseDmxData;
 
-	@Scheduled(fixedRate = 500, timeUnit = TimeUnit.MILLISECONDS)
-	public void refreshCachedDmxData() {
-		Map<Integer, Map<Integer, Integer>> newCache = new HashMap<>();
+    @Scheduled(fixedRate = 500, timeUnit = TimeUnit.MILLISECONDS)
+    public void refreshCachedDmxData() {
+        Map<Integer, Map<Integer, Integer>> newCache = new HashMap<>();
 
-		for (int universe : dmxBaseService.getReservedUniverses()) {
-			Map<Integer, Integer> dmxData = dmxBaseService.getDmxData(universe);
-			if (dmxData != null) {
-				newCache.put(universe, dmxData);
-			}
-		}
-		cachedBaseDmxData = newCache;
-	}
+        for (int universe : dmxBaseService.getReservedUniverses()) {
+            Map<Integer, Integer> dmxData = dmxBaseService.getDmxData(universe);
+            if (dmxData != null) {
+                newCache.put(universe, dmxData);
+            }
+        }
+        cachedBaseDmxData = newCache;
+    }
 
-	@EventListener(ApplicationReadyEvent.class)
-	public void start() {
-		scheduler.scheduleAtFixedRate(() -> {
-			try {
-				DmxState dmxState = DmxState.fromMap(cachedBaseDmxData);
-				new LinkedList<>(triggerStateHolder.getActiveTriggers()).forEach(trigger -> processTrigger(trigger, dmxState));
-				dmxState.getAllUniverses().forEach(this::sendDmxData);
-			} catch (Exception e) {
-				log.error("Error while sending DMX data", e);
-			}
-		}, 0, 10, TimeUnit.MILLISECONDS);
-	}
+    @EventListener(ApplicationReadyEvent.class)
+    public void start() {
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                DmxState dmxState = DmxState.fromMap(cachedBaseDmxData);
+                new LinkedList<>(triggerStateHolder.getActiveTriggers()).forEach(trigger -> processTrigger(trigger, dmxState));
+                dmxState.getAllUniverses().forEach(this::sendDmxData);
+            } catch (Exception e) {
+                log.error("Error while sending DMX data", e);
+            }
+        }, 0, 10, TimeUnit.MILLISECONDS);
+    }
 
-	@SneakyThrows
-	private void sendDmxData(int universe, byte[] dmxData) {
-		String broadcastIP = "192.168.178.255";
-		if (dmxData == null) {
-			return;
-		}
-		InetAddress broadcastAddress = InetAddress.getByName(broadcastIP);
-		artNetClient.unicastDmx(broadcastAddress, 0, universe, dmxData);
-	}
+    @SneakyThrows
+    private void sendDmxData(int universe, byte[] dmxData) {
+        artNetClient.unicastDmx(broadcastIp, 0, universe, dmxData);
+    }
 
-	private void processTrigger(TriggerState triggerState, DmxState dmxState) {
-		long startedOn = triggerState.getStartedOn();
-		long runningSince = System.currentTimeMillis() - startedOn;
-		Trigger trigger = triggerState.getTrigger();
-		List<Action> triggerActions = trigger.getActions();
-		long timeCountingUp = 0;
-		Action lastActiveAction = null;
-		for (Action action : triggerActions) {
-			if (timeCountingUp <= runningSince) {
-				lastActiveAction = action;
-			} else {
-				break;
-			}
-			timeCountingUp += (int) (action.getDuration() * 1000f);
-		}
-		if (lastActiveAction == null) {
-			triggerStateHolder.removeActiveTrigger(triggerState);
-			return;
-		}
-		long timeInAction = runningSince - (timeCountingUp - (int) (lastActiveAction.getDuration() * 1000f));
-		if (timeInAction > lastActiveAction.getDuration() * 1000f) {
-			lastActiveAction.execute(dmxState, 1f);
-			triggerStateHolder.removeActiveTrigger(triggerState);
-			return;
-		}
-		float progress = (float) timeInAction / 1000 / lastActiveAction.getDuration();
-		lastActiveAction.execute(dmxState, progress);
-	}
+    private void processTrigger(TriggerState triggerState, DmxState dmxState) {
+        long startedOn = triggerState.getStartedOn();
+        long runningSince = System.currentTimeMillis() - startedOn;
+        Trigger trigger = triggerState.getTrigger();
+        List<Action> triggerActions = trigger.getActions();
+        long timeCountingUp = 0;
+        Action lastActiveAction = null;
+        for (Action action : triggerActions) {
+            if (timeCountingUp <= runningSince) {
+                lastActiveAction = action;
+            } else {
+                break;
+            }
+            timeCountingUp += (int) (action.getDuration() * 1000f);
+        }
+        if (lastActiveAction == null) {
+            triggerStateHolder.removeActiveTrigger(triggerState);
+            return;
+        }
+        long timeInAction = runningSince - (timeCountingUp - (int) (lastActiveAction.getDuration() * 1000f));
+        if (timeInAction > lastActiveAction.getDuration() * 1000f) {
+            lastActiveAction.execute(dmxState, 1f);
+            triggerStateHolder.removeActiveTrigger(triggerState);
+            return;
+        }
+        float progress = (float) timeInAction / 1000 / lastActiveAction.getDuration();
+        lastActiveAction.execute(dmxState, progress);
+    }
 }
